@@ -25,6 +25,10 @@ const TaskListt = () => {
     fetchTasks();
   }, []);
 
+  useEffect(() => {
+    fetchTasks();
+  }, [tasks]);
+
   const fetchTasks = async () => {
     try {
       const response = await axios.get(
