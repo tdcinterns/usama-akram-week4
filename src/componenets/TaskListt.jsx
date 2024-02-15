@@ -10,9 +10,17 @@ import {
   Paper,
   Button,
   TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
+import { toast } from "react-toastify";
 
-const TaskListt = () => {
+//authenticatedUserId ,
+
+const TaskListt = ({  getTasks }) => {
+  
   const [tasks, setTasks] = useState([]);
   const [taskToUpdate, setTaskToUpdate] = useState(null);
   const [updatedTask, setUpdatedTask] = useState({
@@ -20,15 +28,9 @@ const TaskListt = () => {
     title: "",
     discription: "",
   });
+  const [open, setOpen] = useState(false); 
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  useEffect(() => {
-    fetchTasks();
-  }, [tasks]);
-
+  
   const fetchTasks = async () => {
     try {
       const response = await axios.get(
@@ -40,37 +42,40 @@ const TaskListt = () => {
     }
   };
 
+  useEffect(() => {
+    fetchTasks();
+  }, [getTasks]);
+
   const handleDelete = async (userId, taskId) => {
     try {
       await axios.delete(
         `https://65c09414dc74300bce8c426a.mockapi.io/tdcEval/user/${userId}/task/${taskId}`
       );
-      // Remove the task from the state
-      setTasks(tasks.filter((task) => task.id !== taskId));
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId || task.userId !== userId));
+      toast.success("Task is Deleted ")
     } catch (error) {
       console.error("Error deleting task:", error);
     }
   };
-
+  
   const handleUpdate = async (id) => {
     try {
       const response = await axios.put(
         `https://65c09414dc74300bce8c426a.mockapi.io/tdcEval/task/${id}`,
         updatedTask
       );
-      console.log("Task updated successfully:", response.data);
-      // Update the task in the state
       const updatedTasks = tasks.map((task) =>
         task.id === id ? response.data : task
       );
       setTasks(updatedTasks);
-      // Reset the form
       setUpdatedTask({
         name: "",
         title: "",
         discription: "",
       });
       setTaskToUpdate(null);
+      setOpen(false);
+      toast.success("Task is updated")
     } catch (error) {
       console.error("Error updating task:", error);
     }
@@ -79,6 +84,7 @@ const TaskListt = () => {
   const handleEdit = (task) => {
     setTaskToUpdate(task.id);
     setUpdatedTask(task);
+    setOpen(true);
   };
 
   const handleChange = (e) => {
@@ -90,56 +96,81 @@ const TaskListt = () => {
   };
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Title</TableCell>
-            <TableCell>Discription</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {tasks.map((task) => (
-            <TableRow key={task.id}>
-              <TableCell>{task.name}</TableCell>
-              <TableCell>{task.title}</TableCell>
-              <TableCell>{task.discription}</TableCell>
-              <TableCell>
-                <Button onClick={() => handleDelete(task.userId, task.id)}>
-                  Delete
-                </Button>
-                <Button onClick={() => handleEdit(task)}>Edit</Button>
-              </TableCell>
-              {taskToUpdate === task.id && (
-                <TableCell colSpan={4}>
-                  <TextField
-                    type="text"
-                    name="name"
-                    value={updatedTask.name}
-                    onChange={handleChange}
-                  />
-                  <TextField
-                    type="text"
-                    name="title"
-                    value={updatedTask.title}
-                    onChange={handleChange}
-                  />
-                  <TextField
-                    type="text"
-                    name="discription"
-                    value={updatedTask.discription}
-                    onChange={handleChange}
-                  />
-                  <Button onClick={() => handleUpdate(task.id)}>Update</Button>
-                </TableCell>
-              )}
+    <>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+            <TableCell>ID</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Title</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+          <TableBody>
+            {tasks.map((task) => (
+              <TableRow key={task.id}>
+                <TableCell>{task.id}</TableCell>
+                <TableCell>{task.name}</TableCell>
+                <TableCell>{task.title}</TableCell>
+                <TableCell>{task.discription}</TableCell>
+                <TableCell>
+                  <Button
+                   onClick={() => handleDelete(task?.userId, task?.id)}
+                  >
+                    Delete
+                  </Button>
+                  <Button onClick={() => handleEdit(task)}>Edit</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>Edit Task</DialogTitle>
+        <DialogContent>
+          <form>
+            <TextField
+              type="text"
+              name="name"
+              label="Name"
+              variant="outlined"
+              value={updatedTask.name}
+              onChange={handleChange}
+              fullWidth
+            />
+            <TextField
+              type="text"
+              name="title"
+              label="Title"
+              variant="outlined"
+              value={updatedTask.title}
+              onChange={handleChange}
+              fullWidth
+            />
+            <TextField
+              type="text"
+              name="discription"
+              label="Discription"
+              variant="outlined"
+              value={updatedTask.discription}
+              onChange={handleChange}
+              fullWidth
+            />
+          </form>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => handleUpdate(taskToUpdate)} color="primary">
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

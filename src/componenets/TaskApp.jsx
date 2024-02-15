@@ -1,45 +1,35 @@
-/* eslint-disable react/prop-types */
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import TaskListt from "./TaskListt";
 import TaskForm from "./TaskForm";
-import { useNavigate } from "react-router-dom";
-const TaskApp = ({ authenticated, authenticatedUserId }) => {
-  const navigate = useNavigate();
+import Logout from "./Logout";
+
+
+const TaskApp = () => {
+  
   const [tasks, setTasks] = useState([]);
 
-  useEffect(() => {
-    if (authenticated) {
-      getTasks();
-    }
-  }, [authenticated]);
 
   const getTasks = async () => {
     try {
       const response = await axios.get(
         "https://65c09414dc74300bce8c426a.mockapi.io/tdcEval/task"
       );
-      setTasks(
-        response.data.filter((task) => task.userId === authenticatedUserId)
-      );
+      setTasks(response.data);
     } catch (error) {
       console.error("Error fetching tasks:", error);
     }
   };
 
+  useEffect(() => {
+    getTasks();
+  }, [getTasks]);
+
   return (
     <>
-      {authenticated ? (
-        <>
-          <TaskForm
-            authenticatedUserId={authenticatedUserId}
-            getTasks={getTasks}
-          />
-          <TaskListt tasks={tasks} getTasks={getTasks} />
-        </>
-      ) : (
-        navigate("/")
-      )}
+      <TaskForm tasks={tasks} setTasks={setTasks} getTasks={getTasks} />
+      <Logout />      
+      <TaskListt tasks={tasks} setTasks={setTasks} getTasks={getTasks} />
     </>
   );
 };
